@@ -203,9 +203,11 @@
         }
 
         function loadHomePage() {
+    fetch('/api/tweets')
+        .then(response => response.json())
+        .then(tweets => {
             const content = document.getElementById('content');
-            const tweets = JSON.parse(localStorage.getItem('tweets') || '[]');
-            
+            content.innerHTML = '';
             tweets.forEach(tweet => {
                 const tweetBox = document.createElement('div');
                 tweetBox.classList.add('tweet-box');
@@ -243,7 +245,50 @@
                 tweetBox.appendChild(tweetContent);
                 content.appendChild(tweetBox);
             });
+        });
+}
+
+function postTweet() {
+    const title = document.getElementById('tweetTitle').value;
+    const body = document.getElementById('tweetBody').value;
+    const mediaFiles = document.getElementById('tweetMedia').files;
+    const media = [];
+    
+    if (title && body) {
+        const uploadPromises = [];
+        for (let i = 0; i < mediaFiles.length; i++) {
+            const file = mediaFiles[i];
+            const reader = new FileReader();
+            uploadPromises.push(new Promise((resolve) => {
+                reader.onload = function(event) {
+                    media.push({
+                        type: file.type.startsWith('image') ? 'image' : 'video',
+                        src: event.target.result
+                    });
+                    resolve();
+                };
+                reader.readAsDataURL(file);
+            }));
         }
+        
+        Promise.all(uploadPromises).then(() => {
+            fetch('/api/tweets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title, body, media })
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadHomePage();
+            });
+        });
+    } else {
+        alert('Please enter both title and body.');
+    }
+}
+        
 
         function loadGlobalChat() {
             const content = document.getElementById('content');
