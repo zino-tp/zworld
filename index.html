@@ -291,7 +291,12 @@ function postTweet() {
         
 
         function loadGlobalChat() {
+    fetch('/api/globalChat')
+        .then(response => response.json())
+        .then(messages => {
             const content = document.getElementById('content');
+            content.innerHTML = '';
+            
             const chatBox = document.createElement('div');
             chatBox.id = 'globalChatBox';
             chatBox.style.height = '300px';
@@ -300,59 +305,98 @@ function postTweet() {
             chatBox.style.padding = '10px';
             chatBox.style.borderRadius = '5px';
             
+            messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                messageElement.innerText = message.text;
+                chatBox.appendChild(messageElement);
+            });
+            
+            content.appendChild(chatBox);
+            
             const chatInput = document.createElement('input');
             chatInput.type = 'text';
             chatInput.id = 'globalChatInput';
             chatInput.placeholder = 'Type your message...';
-
+            
             const chatButton = document.createElement('button');
             chatButton.innerText = 'Send';
             chatButton.onclick = () => {
                 const message = chatInput.value;
                 const username = localStorage.getItem('username');
                 if (message) {
-                    const chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-                    const newMessage = `${username}: ${message}`;
-                    chatMessages.push(newMessage);
-                    localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-
-                    const messageElement = document.createElement('div');
-                    messageElement.innerText = newMessage;
-                    chatBox.appendChild(messageElement);
-                    chatInput.value = '';
+                    fetch('/api/globalChat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text: `${username}: ${message}` })
+                    })
+                    .then(response => response.json())
+                    .then(() => {
+                        chatInput.value = '';
+                        loadGlobalChat(); // Reload chat to show new messages
+                    });
                 }
             };
+            
+            content.appendChild(chatInput);
+            content.appendChild(chatButton);
+        });
+}
 
-            const chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-            chatMessages.forEach(chatMessage => {
+        function loadPrivateChat() {
+    const username = localStorage.getItem('username');
+    fetch(`/api/privateChat?username=${username}`)
+        .then(response => response.json())
+        .then(messages => {
+            const content = document.getElementById('content');
+            content.innerHTML = '';
+            
+            const chatBox = document.createElement('div');
+            chatBox.id = 'privateChatBox';
+            chatBox.style.height = '300px';
+            chatBox.style.overflowY = 'scroll';
+            chatBox.style.background = '#333';
+            chatBox.style.padding = '10px';
+            chatBox.style.borderRadius = '5px';
+            
+            messages.forEach(message => {
                 const messageElement = document.createElement('div');
-                messageElement.innerText = chatMessage;
+                messageElement.innerText = message.text;
                 chatBox.appendChild(messageElement);
             });
             
             content.appendChild(chatBox);
-            content.appendChild(chatInput);
-            content.appendChild(chatButton);
-        }
-
-        function loadPrivateChat() {
-            const content = document.getElementById('content');
-            const privateChatInput = document.createElement('input');
-            privateChatInput.type = 'text';
-            privateChatInput.id = 'privateChatInput';
-            privateChatInput.placeholder = 'Enter username to send friend request...';
             
-            const privateChatButton = document.createElement('button');
-            privateChatButton.innerText = 'Send';
-            privateChatButton.onclick = () => {
-                const username = privateChatInput.value;
-                alert(`Friend request sent to ${username}`);
-                privateChatInput.value = '';
+            const chatInput = document.createElement('input');
+            chatInput.type = 'text';
+            chatInput.id = 'privateChatInput';
+            chatInput.placeholder = 'Type your message...';
+            
+            const chatButton = document.createElement('button');
+            chatButton.innerText = 'Send';
+            chatButton.onclick = () => {
+                const message = chatInput.value;
+                if (message) {
+                    fetch('/api/privateChat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text: message, username })
+                    })
+                    .then(response => response.json())
+                    .then(() => {
+                        chatInput.value = '';
+                        loadPrivateChat(); // Reload chat to show new messages
+                    });
+                }
             };
             
-            content.appendChild(privateChatInput);
-            content.appendChild(privateChatButton);
-        }
+            content.appendChild(chatInput);
+            content.appendChild(chatButton);
+        });
+}
 
         function loadPostTweet() {
             const content = document.getElementById('content');
