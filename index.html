@@ -6,78 +6,189 @@
     <title>ZWORLD</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background: #111;
+            color: #fff;
+            text-align: center;
             margin: 0;
             padding: 0;
-            background-color: #333;
-            color: #eee;
-            overflow: hidden;
         }
+
         #intro {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2em;
-            animation: fadeIn 3s forwards;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 3s forwards, fadeOut 3s forwards 3s;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
-        #content {
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #intro h1 {
+            font-size: 2.5em;
+            color: #ff6347;
+        }
+
+        #login {
             display: none;
-            padding: 20px;
         }
-        button {
-            background: #444;
-            color: #eee;
-            border: none;
+
+        #login.active {
+            display: block;
+            margin-top: 20%;
+        }
+
+        #login input {
+            display: block;
+            margin: 10px auto;
             padding: 10px;
-            margin: 5px;
+            width: 80%;
+            max-width: 300px;
+            background: #222;
+            border: 1px solid #555;
+            color: #fff;
+        }
+
+        #login button {
+            padding: 10px 20px;
+            background: #ff6347;
+            border: none;
+            color: #fff;
             cursor: pointer;
         }
-        button:hover {
-            background: #555;
+
+        #main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
         }
-        #tweetMedia {
+
+        #menu {
+            margin-bottom: 20px;
+        }
+
+        #menu button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: #444;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #content {
+            width: 100%;
+            max-width: 800px;
+            background: #222;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #000;
+        }
+
+        .tweet-box {
+            background: #333;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        .tweet-box h3 {
+            margin: 0 0 5px;
+            color: #ff6347;
+            cursor: pointer;
+        }
+
+        .tweet-content {
+            display: none;
+        }
+
+        .tweet-content p {
             margin: 10px 0;
         }
-        #tweetsBox, #globalChatBox {
-            overflow-y: scroll;
-            height: 300px;
-            border: 1px solid #444;
-            padding: 10px;
-        }
-        .tweet {
-            border-bottom: 1px solid #444;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-        }
-        .tweet img, .tweet video {
+
+        .tweet-content img, .tweet-content video {
             max-width: 100%;
             height: auto;
+            margin-top: 10px;
+        }
+
+        #globalChat, #privateChat, #postTweet {
+            display: none;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #222;
+            border: 1px solid #555;
+            color: #fff;
         }
     </style>
 </head>
 <body>
-    <div id="intro">Welcome to ZWORLD</div>
-    <div id="content"></div>
+    <div id="intro">
+        <h1>Welcome to ZWORLD</h1>
+    </div>
+    <div id="login">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+    <div id="main" style="display: none;">
+        <div id="menu">
+            <button id="homeBtn" onclick="showPage('home')">Homepage</button>
+            <button id="globalChatBtn" onclick="showPage('globalChat')">Global Chat</button>
+            <button id="privateChatBtn" onclick="showPage('privateChat')">Private Chat</button>
+            <button id="postTweetBtn" onclick="showPage('postTweet')">Post Tweet</button>
+        </div>
+        <div id="content">
+            <!-- Dynamic Content Goes Here -->
+        </div>
+    </div>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        window.onload = function() {
             setTimeout(() => {
                 document.getElementById('intro').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-                showPage('home');
+                document.getElementById('login').classList.add('active');
             }, 3000);
-        });
+
+            cleanUpOldTweets();
+        };
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password) {
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('main').style.display = 'block';
+                localStorage.setItem('username', username);
+            } else {
+                alert('Please enter both username and password.');
+            }
+        }
 
         function showPage(page) {
-            const content = document.getElementById('content');
-            content.innerHTML = '';
-            switch (page) {
+            document.getElementById('content').innerHTML = '';
+            
+            switch(page) {
                 case 'home':
-                    loadHome();
+                    loadHomePage();
                     break;
                 case 'globalChat':
                     loadGlobalChat();
@@ -88,49 +199,117 @@
                 case 'postTweet':
                     loadPostTweet();
                     break;
-                default:
-                    loadHome();
             }
         }
 
-        function loadHome() {
+        function loadHomePage() {
             const content = document.getElementById('content');
-            const tweetsBox = document.createElement('div');
-            tweetsBox.id = 'tweetsBox';
-            content.appendChild(tweetsBox);
-            fetchTweets();
-        }
-
-        async function fetchTweets() {
-            try {
-                const response = await fetch('/api/tweets');
-                const tweets = await response.json();
-                const tweetsBox = document.getElementById('tweetsBox');
-                tweetsBox.innerHTML = '';
-                tweets.forEach(tweet => {
-                    const tweetDiv = document.createElement('div');
-                    tweetDiv.className = 'tweet';
-                    tweetDiv.innerHTML = `<strong>${tweet.title}</strong><p>${tweet.body}</p>`;
-                    tweet.media.forEach(item => {
-                        if (item.type === 'image') {
+            const tweets = JSON.parse(localStorage.getItem('tweets') || '[]');
+            
+            tweets.forEach(tweet => {
+                const tweetBox = document.createElement('div');
+                tweetBox.classList.add('tweet-box');
+                
+                const title = document.createElement('h3');
+                title.innerText = tweet.title;
+                title.onclick = () => {
+                    const tweetContent = tweetBox.querySelector('.tweet-content');
+                    tweetContent.style.display = tweetContent.style.display === 'none' ? 'block' : 'none';
+                };
+                tweetBox.appendChild(title);
+                
+                const tweetContent = document.createElement('div');
+                tweetContent.classList.add('tweet-content');
+                
+                const body = document.createElement('p');
+                body.innerText = tweet.body;
+                tweetContent.appendChild(body);
+                
+                if (tweet.media) {
+                    tweet.media.forEach(media => {
+                        if (media.type === 'image') {
                             const img = document.createElement('img');
-                            img.src = item.src;
-                            tweetDiv.appendChild(img);
-                        } else if (item.type === 'video') {
+                            img.src = media.src;
+                            tweetContent.appendChild(img);
+                        } else if (media.type === 'video') {
                             const video = document.createElement('video');
-                            video.src = item.src;
+                            video.src = media.src;
                             video.controls = true;
-                            tweetDiv.appendChild(video);
+                            tweetContent.appendChild(video);
                         }
                     });
-                    tweetsBox.appendChild(tweetDiv);
-                });
-            } catch (error) {
-                console.error('Error fetching tweets:', error);
-            }
+                }
+                
+                tweetBox.appendChild(tweetContent);
+                content.appendChild(tweetBox);
+            });
         }
 
-        async function loadPostTweet() {
+        function loadGlobalChat() {
+            const content = document.getElementById('content');
+            const chatBox = document.createElement('div');
+            chatBox.id = 'globalChatBox';
+            chatBox.style.height = '300px';
+            chatBox.style.overflowY = 'scroll';
+            chatBox.style.background = '#333';
+            chatBox.style.padding = '10px';
+            chatBox.style.borderRadius = '5px';
+            
+            const chatInput = document.createElement('input');
+            chatInput.type = 'text';
+            chatInput.id = 'globalChatInput';
+            chatInput.placeholder = 'Type your message...';
+
+            const chatButton = document.createElement('button');
+            chatButton.innerText = 'Send';
+            chatButton.onclick = () => {
+                const message = chatInput.value;
+                const username = localStorage.getItem('username');
+                if (message) {
+                    const chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+                    const newMessage = `${username}: ${message}`;
+                    chatMessages.push(newMessage);
+                    localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+
+                    const messageElement = document.createElement('div');
+                    messageElement.innerText = newMessage;
+                    chatBox.appendChild(messageElement);
+                    chatInput.value = '';
+                }
+            };
+
+            const chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+            chatMessages.forEach(chatMessage => {
+                const messageElement = document.createElement('div');
+                messageElement.innerText = chatMessage;
+                chatBox.appendChild(messageElement);
+            });
+            
+            content.appendChild(chatBox);
+            content.appendChild(chatInput);
+            content.appendChild(chatButton);
+        }
+
+        function loadPrivateChat() {
+            const content = document.getElementById('content');
+            const privateChatInput = document.createElement('input');
+            privateChatInput.type = 'text';
+            privateChatInput.id = 'privateChatInput';
+            privateChatInput.placeholder = 'Enter username to send friend request...';
+            
+            const privateChatButton = document.createElement('button');
+            privateChatButton.innerText = 'Send';
+            privateChatButton.onclick = () => {
+                const username = privateChatInput.value;
+                alert(`Friend request sent to ${username}`);
+                privateChatInput.value = '';
+            };
+            
+            content.appendChild(privateChatInput);
+            content.appendChild(privateChatButton);
+        }
+
+        function loadPostTweet() {
             const content = document.getElementById('content');
             const tweetTitle = document.createElement('input');
             tweetTitle.type = 'text';
@@ -148,12 +327,12 @@
             
             const tweetButton = document.createElement('button');
             tweetButton.innerText = 'Post';
-            tweetButton.onclick = async () => {
+            tweetButton.onclick = () => {
                 const title = tweetTitle.value;
                 const body = tweetBody.value;
-                const mediaFiles = document.getElementById('tweetMedia').files;
+                const mediaFiles = tweetMedia.files;
                 const media = [];
-
+                
                 if (title && body) {
                     for (let i = 0; i < mediaFiles.length; i++) {
                         const file = mediaFiles[i];
@@ -164,14 +343,14 @@
                                 src: event.target.result
                             });
                             if (media.length === mediaFiles.length) {
-                                postTweet({ title, body, media });
+                                saveTweet({ title, body, media });
                             }
                         };
                         reader.readAsDataURL(file);
                     }
                     
                     if (mediaFiles.length === 0) {
-                        postTweet({ title, body, media });
+                        saveTweet({ title, body, media });
                     }
                 } else {
                     alert('Please enter both title and body.');
@@ -184,24 +363,19 @@
             content.appendChild(tweetButton);
         }
 
-        async function postTweet(tweet) {
-            try {
-                const response = await fetch('/api/tweet', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(tweet),
-                });
+        function saveTweet(tweet) {
+            const tweets = JSON.parse(localStorage.getItem('tweets') || '[]');
+            tweet.timestamp = Date.now();
+            tweets.push(tweet);
+            localStorage.setItem('tweets', JSON.stringify(tweets));
+            showPage('home');
+        }
 
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                showPage('home');
-            } catch (error) {
-                console.error('Error posting tweet:', error);
-            }
+        function cleanUpOldTweets() {
+            const tweets = JSON.parse(localStorage.getItem('tweets') || '[]');
+            const now = Date.now();
+            const filteredTweets = tweets.filter(tweet => now - tweet.timestamp < 24 * 60 * 60 * 1000);
+            localStorage.setItem('tweets', JSON.stringify(filteredTweets));
         }
     </script>
 </body>
